@@ -107,12 +107,53 @@ function Dashboard() {
   useEffect(() => {
     setMascotState(mood, mascotMessage);
   }, [mood, mascotMessage, setMascotState]);
-  const visibleEvents = useMemo(() => state?.eventLog.slice(0, 8) ?? [], [state?.eventLog]);
+    const visibleEvents = useMemo(() => state?.eventLog.slice(0, 8) ?? [], [state?.eventLog]);
   const runAction = (action: 'start_engine' | 'stop_engine' | 'demo_brake' | 'reset') => {
     actionMutation.mutate({ data: { action } }, { onSuccess: (nextState) => queryClient.setQueryData(getGetSimulatorStateQueryKey(), nextState) });
   };
+  const sectionMeta = useMemo(
+    () => [
+      { id: 'section-overview', label: 'overview' as const },
+      { id: 'section-safety', label: 'safety' as const },
+      { id: 'section-telemetry', label: 'telemetry' as const },
+      { id: 'section-log', label: 'log' as const },
+    ],
+    [],
+  );
+  const [activeSection, setActiveSection] = useState<'overview' | 'safety' | 'telemetry' | 'log'>('overview');
+  useEffect(() => {
+    const handleScroll = () => {
+      const offset = 140;
+      let current = sectionMeta[0].label;
+      for (const { id, label } of sectionMeta) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top - offset <= 0) {
+          current = label;
+        }
+      }
+      setActiveSection(current);
+    };
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [sectionMeta]);
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
   if (stateQuery.isLoading) {
-    return <div className="min-h-[100dvh] bg-[#081015] p-6 text-[#82969d]"><div className="mx-auto max-w-[1500px] animate-pulse"><div className="mb-8 h-10 w-64 rounded bg-[#15252b]" /><div className="grid gap-5 lg:grid-cols-3"><div className="h-96 rounded-2xl bg-[#102027]" /><div className="h-96 rounded-2xl bg-[#102027]" /><div className="h-96 rounded-2xl bg-[#102027]" /></div></div></div>;
+    return (
+      <div className="min-h-[100dvh] bg-[#081015] p-6 text-[#82969d]">
+        <div className="mx-auto max-w-[1500px] animate-pulse">
+          <div className="mb-8 h-10 w-64 rounded bg-[#15252b]" />
+
+          <div className="grid gap-5 lg:grid-cols-3">
+            <div className="h-96 rounded-2xl bg-[#102027]" />
+            <div className="h-96 rounded-2xl bg-[#102027]" />
+            <div className="h-96 rounded-2xl bg-[#102027]" />
+          </div>
+        </div>
+      </div>
+    );
   }
   if (stateQuery.isError || !state) {
     return <div className="flex min-h-[100dvh] items-center justify-center bg-[#081015] p-6"><div className="hmi-panel max-w-md rounded-2xl p-8 text-center"><TriangleAlert className="mx-auto mb-4 text-[#f06a5f]" size={34} /><h1 className="display-font text-3xl text-[#e9eee8]">Simulator link unavailable</h1><p className="mt-2 text-sm text-[#82969d]">The assistant could not read the machine state. Check the cab connection and try again.</p><button type="button" onClick={() => stateQuery.refetch()} className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[#e5a629] px-4 py-2 text-sm font-bold text-[#0b171b]" data-testid="button-retry-state"><RefreshCw size={16} /> Retry connection</button></div></div>;
@@ -124,10 +165,10 @@ function Dashboard() {
           <div className="mb-12 flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#a87924] bg-[#3a2d16] text-[#e5a629]"><CircleGauge size={19} /></div><div><div className="display-font text-lg font-semibold tracking-wide">SMART OP</div><div className="mono-font text-[9px] tracking-[.17em] text-[#82969d]">FIELD SYSTEMS</div></div></div>
           <div className="section-label mb-3">Operator console</div>
           <nav className="space-y-1">
-            <button type="button" className="flex w-full items-center gap-3 rounded-lg border border-[#a87924]/40 bg-[#3a2d16] px-3 py-3 text-left text-sm font-semibold text-[#e5a629]" data-testid="button-nav-overview"><Activity size={17} /> Overview <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#e5a629]" /></button>
-            <button type="button" className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm text-[#82969d] hover:bg-[#15252b] hover:text-[#dbe5df]" data-testid="button-nav-safety"><ShieldCheck size={17} /> Safety checks</button>
-            <button type="button" className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm text-[#82969d] hover:bg-[#15252b] hover:text-[#dbe5df]" data-testid="button-nav-telemetry"><Activity size={17} /> Telemetry</button>
-            <button type="button" className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm text-[#82969d] hover:bg-[#15252b] hover:text-[#dbe5df]" data-testid="button-nav-log"><Bell size={17} /> Event log</button>
+            <button type="button" onClick={() => scrollToSection('section-overview')} className="flex w-full items-center gap-3 rounded-lg border border-[#a87924]/40 bg-[#3a2d16] px-3 py-3 text-left text-sm font-semibold text-[#e5a629]" data-testid="button-nav-overview"><Activity size={17} /> Overview <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#e5a629]" /></button>
+            <button type="button"  onClick={() => scrollToSection('section-safety')} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm text-[#82969d] hover:bg-[#15252b] hover:text-[#dbe5df]" data-testid="button-nav-safety"><ShieldCheck size={17} /> Safety checks</button>
+            <button type="button" onClick={() => scrollToSection('section-telemetry')} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm text-[#82969d] hover:bg-[#15252b] hover:text-[#dbe5df]" data-testid="button-nav-telemetry"><Activity size={17} /> Telemetry</button>
+            <button type="button" onClick={() => scrollToSection('section-telemetry')} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm text-[#82969d] hover:bg-[#15252b] hover:text-[#dbe5df]" data-testid="button-nav-log"><Bell size={17} /> Event log</button>
           </nav>
           <div className="mt-auto border-t border-[#1c3036] pt-5"><div className="section-label mb-3">Machine profile</div><div className="text-sm font-semibold text-[#dbe5df]">CAT 320 GC</div><div className="mono-font mt-1 text-[10px] text-[#82969d]">UNIT 04 / NORTH BENCH</div><div className="mt-4 flex items-center gap-2"><span className={`h-2 w-2 rounded-full ${healthQuery.isSuccess ? 'bg-[#42c3ad]' : 'bg-[#f06a5f]'}`} /><span className="mono-font text-[10px] uppercase tracking-wider text-[#82969d]">{healthQuery.isSuccess ? 'link nominal' : 'link check'}</span></div></div>
         </aside>
@@ -138,13 +179,13 @@ function Dashboard() {
           </header>
           <div className="mx-auto max-w-[1400px] space-y-5 p-5 sm:p-8">
             {nearestDanger && <div className="dash-in flex items-center justify-between gap-4 rounded-xl border border-[#a7423f] bg-[#3b1f20] px-4 py-3 text-[#f4cbc5]" data-testid="alert-terrain-danger"><div className="flex items-center gap-3"><Siren size={20} className="text-[#f06a5f]" /><div><div className="mono-font text-[10px] font-semibold uppercase tracking-[.16em] text-[#f06a5f]">Terrain warning</div><div className="text-sm font-semibold">Object inside emergency braking distance — keep hands on controls.</div></div></div><button type="button" onClick={() => runAction('demo_brake')} disabled={actionMutation.isPending} className="shrink-0 rounded-lg border border-[#e06d62] px-3 py-2 text-xs font-bold text-[#f6c4bd] hover:bg-[#512526] disabled:opacity-50" data-testid="button-emergency-brake-alert">BRAKE NOW</button></div>}
-            <section className="grid gap-5 xl:grid-cols-[1.2fr_.8fr]">
+            <section id="section-overview" className="grid gap-5 xl:grid-cols-[1.2fr_.8fr] scroll-mt-24">
               <div className="hmi-panel relative overflow-hidden rounded-2xl p-5 sm:p-7">
                 <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-[#e5a629]/5 blur-3xl" /><div className="relative flex flex-wrap items-start justify-between gap-4"><div><div className="section-label">Co-pilot status</div><div className="mt-1 flex items-center gap-2"><h2 className="display-font text-2xl text-[#e9eee8]">{mood === 'alert' ? 'Hold position' : mood === 'warning' ? 'Stay observant' : mood === 'greeting' ? 'All systems ready' : 'Awaiting operator'}</h2><span className="rounded-full border border-[#2b4249] px-2 py-1 mono-font text-[9px] uppercase tracking-wider text-[#82969d]">AI assist</span></div></div><div className="mono-font text-right text-[10px] uppercase tracking-wider text-[#82969d]"><div>unit 04</div><div className="mt-1 text-[#dbe5df]">cat 320 gc</div></div></div>
                 <div className="flex items-center justify-center py-5 sm:py-2"><Mascot mascotState={mascotState} message={message} /></div>
                 <div className="grid grid-cols-3 gap-3 border-t border-[#263a40] pt-5"><MetricGauge label="Ground speed" value={state.machine.speed.toFixed(1)} unit="km/h" icon={Zap} /><MetricGauge label="Heading" value={String(Math.round(state.machine.heading)).padStart(3, '0')} unit="deg" icon={Compass} accent="#42c3ad" /><MetricGauge label="Position" value={`${Math.round(state.terrain.machineX)},${Math.round(state.terrain.machineY)}`} unit="xy" icon={MapPin} accent="#aab7b4" /></div>
               </div>
-              <div className="hmi-panel rounded-2xl p-5 sm:p-7">
+              <div id="section-safety" className="hmi-panel rounded-2xl p-5 sm:p-7 scroll-mt-24">
                 <div className="mb-4 flex items-start justify-between"><div><div className="section-label">Operator-ready gate</div><h2 className="display-font mt-1 text-2xl text-[#e9eee8]">Pre-start check</h2></div><LockKeyhole size={19} className={canStart ? 'text-[#42c3ad]' : 'text-[#e5a629]'} /></div>
                 <div className="mb-4 overflow-hidden rounded-xl border border-[#2b4249] bg-[#0b171c]"><div className="flex aspect-[2.5/1] items-center justify-center bg-[linear-gradient(140deg,rgba(40,62,67,.22),rgba(10,22,27,.8))]"><div className="text-center"><Video className="mx-auto mb-2 text-[#63777f]" size={28} /><div className="section-label">cab camera placeholder</div><div className="mono-font mt-1 text-[9px] text-[#52676e]">manual confirmation available</div></div></div><div className="flex items-center justify-between border-t border-[#263a40] px-3 py-2"><span className="mono-font text-[9px] uppercase tracking-wider text-[#82969d]">ppe vision / standby</span><button type="button" onClick={() => setManualPpe((value) => !value)} className="text-[10px] font-bold uppercase tracking-wider text-[#e5a629] hover:text-[#f3c65d]" data-testid="button-manual-ppe">{ppeReady ? 'confirmed' : 'confirm manually'}</button></div></div>
                 <ReadinessRow icon={HardHat} label="Helmet + hi-vis detected" detail={ppeReady ? 'manual / vision pass' : 'awaiting confirmation'} checked={ppeReady} onClick={() => setManualPpe((value) => !value)} />
@@ -155,11 +196,11 @@ function Dashboard() {
             </section>
             <section className="grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
               <div className="hmi-panel rounded-2xl p-5 sm:p-6"><div className="mb-4 flex flex-wrap items-end justify-between gap-3"><div><div className="section-label">Perimeter awareness</div><h2 className="display-font mt-1 text-2xl text-[#e9eee8]">Terrain watch</h2></div><div className="flex items-center gap-3"><div className="text-right"><div className="section-label">brake envelope</div><div className="mono-font text-sm text-[#dbe5df]">{state.terrain.dangerDistance.toFixed(1)} m</div></div><button type="button" onClick={() => runAction('demo_brake')} disabled={actionMutation.isPending} className="flex items-center gap-2 rounded-lg border border-[#a87924] bg-[#3a2d16] px-3 py-2 text-xs font-bold text-[#e5a629] hover:bg-[#4a3718] disabled:opacity-50" data-testid="button-demo-brake"><Siren size={14} /> demo brake</button></div></div><TerrainMap x={state.terrain.machineX} y={state.terrain.machineY} obstacles={state.terrain.obstacles} distance={state.terrain.nearestObstacleDistance} dangerDistance={state.terrain.dangerDistance} /><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4"><MetricGauge label="Nearest" value={state.terrain.nearestObstacleDistance.toFixed(1)} unit="m" icon={Crosshair} accent={nearestDanger ? '#f06a5f' : '#e5a629'} /><MetricGauge label="Objects" value={String(state.terrain.obstacles.length)} unit="tracked" icon={AlertTriangle} accent="#aab7b4" /><MetricGauge label="X coord" value={String(Math.round(state.terrain.machineX))} unit="m" icon={MapPin} accent="#42c3ad" /><MetricGauge label="Y coord" value={String(Math.round(state.terrain.machineY))} unit="m" icon={MapPin} accent="#42c3ad" /></div></div>
-              <div className="hmi-panel rounded-2xl p-5 sm:p-6"><div className="mb-5 flex items-start justify-between"><div><div className="section-label">Cabin environment</div><h2 className="display-font mt-1 text-2xl text-[#e9eee8]">Live telemetry</h2></div><Wind className="text-[#42c3ad]" size={20} /></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">{state.sensors.map((sensor) => <SensorCard key={sensor.id} sensor={sensor} />)}</div></div>
+              <div id="section-telemetry" className="hmi-panel rounded-2xl p-5 sm:p-6 scroll-mt-24"><div className="mb-5 flex items-start justify-between"><div><div className="section-label">Cabin environment</div><h2 className="display-font mt-1 text-2xl text-[#e9eee8]">Live telemetry</h2></div><Wind className="text-[#42c3ad]" size={20} /></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">{state.sensors.map((sensor) => <SensorCard key={sensor.id} sensor={sensor} />)}</div></div>
             </section>
             <section className="grid gap-5 lg:grid-cols-[1fr_1fr]">
               <div className="hmi-panel rounded-2xl p-5 sm:p-6"><div className="mb-4 flex items-center justify-between"><div><div className="section-label">Machine vitals</div><h2 className="display-font mt-1 text-2xl text-[#e9eee8]">Drive status</h2></div><HeartPulse className="text-[#e5a629]" size={20} /></div><div className="grid grid-cols-2 gap-3"><div className="rounded-xl border border-[#2b4249] bg-[#122229] p-4"><div className="section-label">engine state</div><div className="mt-2 flex items-center gap-2"><span className={`h-2.5 w-2.5 rounded-full ${engine === 'running' ? 'bg-[#42c3ad]' : engine === 'braking' ? 'bg-[#f06a5f]' : 'bg-[#e5a629]'}`} /><span className="display-font text-2xl uppercase text-[#e9eee8]">{engine}</span></div></div><div className="rounded-xl border border-[#2b4249] bg-[#122229] p-4"><div className="section-label">operator safety</div><div className="mt-2 flex items-center gap-2"><ShieldCheck size={17} className={ppeReady && seatbeltReady ? 'text-[#42c3ad]' : 'text-[#e5a629]'} /><span className="display-font text-2xl text-[#e9eee8]">{ppeReady && seatbeltReady ? 'PASS' : 'CHECK'}</span></div></div></div><div className="mt-4 flex items-center justify-between border-t border-[#263a40] pt-4"><span className="mono-font text-[10px] uppercase tracking-wider text-[#82969d]">machine heading</span><span className="mono-font text-sm text-[#e5a629]">{Math.round(state.machine.heading)}° / {state.machine.speed.toFixed(1)} km/h</span></div></div>
-              <div className="hmi-panel rounded-2xl p-5 sm:p-6"><div className="mb-3 flex items-start justify-between"><div><div className="section-label">Shift record</div><h2 className="display-font mt-1 text-2xl text-[#e9eee8]">Event log</h2></div><button type="button" onClick={() => runAction('reset')} disabled={actionMutation.isPending} className="flex items-center gap-1.5 rounded-lg border border-[#2b4249] px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#aab7b4] hover:border-[#e5a629] hover:text-[#e5a629]" data-testid="button-reset-simulator"><RotateCcw size={13} /> reset sim</button></div><div className="max-h-[235px] overflow-auto pr-1">{visibleEvents.length === 0 ? <div className="flex h-28 items-center justify-center text-sm text-[#82969d]">No events recorded this shift.</div> : visibleEvents.map((event) => { const tone = event.level === 'alert' ? 'red' : event.level === 'warning' ? 'amber' : 'teal'; return <div className="flex gap-3 border-b border-[#263a40] py-3 last:border-0" key={event.id} data-testid={`event-row-${event.id}`}><div className={`mt-1 h-2 w-2 shrink-0 rounded-full ${tone === 'red' ? 'bg-[#f06a5f]' : tone === 'amber' ? 'bg-[#e5a629]' : 'bg-[#42c3ad]'}`} /><div className="min-w-0 flex-1"><div className="text-xs leading-snug text-[#dbe5df]">{event.message}</div><div className="mono-font mt-1 text-[9px] uppercase tracking-wider text-[#63777f]">{new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })} / {event.level}</div></div></div>; })}</div></div>
+              <div id="section-log" className="hmi-panel rounded-2xl p-5 sm:p-6 scroll-mt-24"><div className="mb-3 flex items-start justify-between"><div><div className="section-label">Shift record</div><h2 className="display-font mt-1 text-2xl text-[#e9eee8]">Event log</h2></div><button type="button" onClick={() => runAction('reset')} disabled={actionMutation.isPending} className="flex items-center gap-1.5 rounded-lg border border-[#2b4249] px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#aab7b4] hover:border-[#e5a629] hover:text-[#e5a629]" data-testid="button-reset-simulator"><RotateCcw size={13} /> reset sim</button></div><div className="max-h-[235px] overflow-auto pr-1">{visibleEvents.length === 0 ? <div className="flex h-28 items-center justify-center text-sm text-[#82969d]">No events recorded this shift.</div> : visibleEvents.map((event) => { const tone = event.level === 'alert' ? 'red' : event.level === 'warning' ? 'amber' : 'teal'; return <div className="flex gap-3 border-b border-[#263a40] py-3 last:border-0" key={event.id} data-testid={`event-row-${event.id}`}><div className={`mt-1 h-2 w-2 shrink-0 rounded-full ${tone === 'red' ? 'bg-[#f06a5f]' : tone === 'amber' ? 'bg-[#e5a629]' : 'bg-[#42c3ad]'}`} /><div className="min-w-0 flex-1"><div className="text-xs leading-snug text-[#dbe5df]">{event.message}</div><div className="mono-font mt-1 text-[9px] uppercase tracking-wider text-[#63777f]">{new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })} / {event.level}</div></div></div>; })}</div></div>
             </section>
             <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-[#1c3036] py-2 mono-font text-[9px] uppercase tracking-[.14em] text-[#52676e]"><span>smart operator assistant / field systems</span><span className="flex items-center gap-2"><UserRound size={12} /> operator 04 <span className="text-[#42c3ad]">● secured</span></span></footer>
           </div>
