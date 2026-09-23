@@ -29,19 +29,23 @@ db.exec(`
   );
 
   CREATE TABLE IF NOT EXISTS tasks (
-    id TEXT PRIMARY KEY,
-    task_type TEXT NOT NULL,
-    site TEXT,
-    priority INTEGER DEFAULT 1,
-    operator_id TEXT,
-    machine_id TEXT,
-    status TEXT DEFAULT 'pending',
-    estimated_duration INTEGER,
-    scheduled_start TEXT,
-    scheduled_end TEXT,
-    actual_start TEXT,
-    actual_end TEXT
-  );
+  id TEXT PRIMARY KEY,
+  task_type TEXT NOT NULL,
+  site TEXT,
+  priority INTEGER DEFAULT 1,
+  operator_id TEXT,
+  machine_id TEXT,
+  status TEXT DEFAULT 'pending',
+  estimated_duration INTEGER,
+  scheduled_start TEXT,
+  scheduled_end TEXT,
+  actual_start TEXT,
+  actual_end TEXT,
+  deadline TEXT,
+  required_weather TEXT,
+  operator_available_start TEXT,
+  operator_available_end TEXT
+);
 
   CREATE TABLE IF NOT EXISTS task_history (
     id TEXT PRIMARY KEY,
@@ -110,6 +114,21 @@ db.exec(`
     status TEXT DEFAULT 'booked'
   );
 `);
+try {
+  db.exec(`ALTER TABLE tasks ADD COLUMN deadline TEXT`);
+} catch {}
+
+try {
+  db.exec(`ALTER TABLE tasks ADD COLUMN required_weather TEXT`);
+} catch {}
+
+try {
+  db.exec(`ALTER TABLE tasks ADD COLUMN operator_available_start TEXT`);
+} catch {}
+
+try {
+  db.exec(`ALTER TABLE tasks ADD COLUMN operator_available_end TEXT`);
+} catch {}
 
 function seedDatabase() {
   const taskCount = db
