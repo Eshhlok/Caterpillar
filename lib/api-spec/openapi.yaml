@@ -1,0 +1,195 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: simulator
+    description: Simulated Smart Operator Assistant machine telemetry
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /simulator/state:
+    get:
+      operationId: getSimulatorState
+      tags: [simulator]
+      summary: Get the current simulator state
+      description: Returns the latest simulated machine, terrain, safety, sensor, and event log data.
+      responses:
+        "200":
+          description: Current simulator state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimulatorState"
+  /simulator/action:
+    post:
+      operationId: applySimulatorAction
+      tags: [simulator]
+      summary: Apply a simulator control action
+      description: Starts or stops the simulated engine, triggers a demo brake event, or resets the machine.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SimulatorActionInput"
+      responses:
+        "200":
+          description: Updated simulator state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimulatorState"
+        "400":
+          description: Invalid action
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    SimulatorActionInput:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: [start_engine, stop_engine, demo_brake, reset]
+      required:
+        - action
+    SimulatorState:
+      type: object
+      properties:
+        machine:
+          $ref: "#/components/schemas/MachineStatus"
+        safety:
+          $ref: "#/components/schemas/SafetyStatus"
+        sensors:
+          type: array
+          items:
+            $ref: "#/components/schemas/SensorReading"
+        terrain:
+          $ref: "#/components/schemas/TerrainStatus"
+        eventLog:
+          type: array
+          items:
+            $ref: "#/components/schemas/SimulatorEvent"
+        updatedAt:
+          type: string
+          format: date-time
+      required: [machine, safety, sensors, terrain, eventLog, updatedAt]
+    MachineStatus:
+      type: object
+      properties:
+        engine:
+          type: string
+          enum: [offline, ready, running, braking]
+        speed:
+          type: number
+        heading:
+          type: number
+      required: [engine, speed, heading]
+    SafetyStatus:
+      type: object
+      properties:
+        ppeDetected:
+          type: boolean
+        seatbeltFastened:
+          type: boolean
+      required: [ppeDetected, seatbeltFastened]
+    SensorReading:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        value:
+          type: number
+        unit:
+          type: string
+        threshold:
+          type: number
+        status:
+          type: string
+          enum: [normal, warning, alert]
+        direction:
+          type: string
+          enum: [high, low]
+      required: [id, label, value, unit, threshold, status, direction]
+    TerrainStatus:
+      type: object
+      properties:
+        machineX:
+          type: number
+        machineY:
+          type: number
+        obstacles:
+          type: array
+          items:
+            $ref: "#/components/schemas/Obstacle"
+        nearestObstacleDistance:
+          type: number
+        dangerDistance:
+          type: number
+      required: [machineX, machineY, obstacles, nearestObstacleDistance, dangerDistance]
+    Obstacle:
+      type: object
+      properties:
+        id:
+          type: string
+        x:
+          type: number
+        y:
+          type: number
+        distance:
+          type: number
+        severity:
+          type: string
+          enum: [caution, danger]
+      required: [id, x, y, distance, severity]
+    SimulatorEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        level:
+          type: string
+          enum: [info, warning, alert]
+        message:
+          type: string
+      required: [id, timestamp, level, message]
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
